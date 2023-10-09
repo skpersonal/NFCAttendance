@@ -13,8 +13,8 @@ import nfc
 import simpleaudio
 
 dotenv.load_dotenv()
-SYSTEM_CODE = os.environ.get("SYSTEM_CODE")
-SERVICE_CODE = os.environ.get("SERVICE_CODE")
+SYSTEM_CODE = int(os.environ.get("SYSTEM_CODE"), 0)
+SERVICE_CODE = int(os.environ.get("SERVICE_CODE"), 0)
 SE_SUCCESS_AUDIO = simpleaudio.WaveObject.from_wave_file("se_success.wav")
 SE_FAIL_AUDIO = simpleaudio.WaveObject.from_wave_file("se_fail.wav")
 
@@ -261,7 +261,7 @@ class MainWindow(tk.Frame):
         try:
             while self.loop:
                 clf.connect(
-                    rdwr={'on-discover': lambda: print("Scanning..."), 'on-connect': self.on_connect})
+                    rdwr={'on-connect': self.on_connect})
         finally:
             clf.close()
             print("clf closed")
