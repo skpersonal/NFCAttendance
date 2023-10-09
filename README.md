@@ -2,7 +2,7 @@
 
 ## 動作確認デバイス
 
-- PaSoRI RC-S380
+- PaSoRi RC-S380
 
 ## 使い方
 
