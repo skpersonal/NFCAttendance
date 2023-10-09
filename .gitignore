@@ -1,0 +1,7 @@
+*
+*/
+!.gitignore
+!check4.py
+!requirements.txt
+!se_fail.wav
+!se_success.wav
