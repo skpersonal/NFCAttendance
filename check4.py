@@ -1,3 +1,4 @@
+import argparse
 import csv
 import datetime
 import json
@@ -8,13 +9,20 @@ import tkinter as tk
 import traceback
 from tkinter import *
 from tkinter import filedialog, scrolledtext, ttk
+
 import dotenv
 import nfc
 import simpleaudio
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--system", help="set SYSTEM_CODE", type=str)
+parser.add_argument("--service", help="set SERVICE_CODE", type=str)
+args = parser.parse_args()
 dotenv.load_dotenv()
-SYSTEM_CODE = int(os.environ.get("SYSTEM_CODE"), 0)
-SERVICE_CODE = int(os.environ.get("SERVICE_CODE"), 0)
+SYSTEM_CODE = int(os.getenv("SYSTEM_CODE", "0x0001"),
+                  0) if args.system is None else int(args.system, 0)
+SERVICE_CODE = int(os.getenv("SERVICE_CODE", "0x0001"),
+                   0) if args.service is None else int(args.service, 0)
 SE_SUCCESS_AUDIO = simpleaudio.WaveObject.from_wave_file("se_success.wav")
 SE_FAIL_AUDIO = simpleaudio.WaveObject.from_wave_file("se_fail.wav")
 
@@ -268,6 +276,8 @@ class MainWindow(tk.Frame):
 
 
 def main():
+    print(f"SYSTEM_CODE={hex(SYSTEM_CODE)}")
+    print(f"SERVICE_CODE={hex(SERVICE_CODE)}")
     window = tk.Tk()
     main_window = MainWindow(window)
     main_window.mainloop()
