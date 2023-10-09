@@ -1,5 +1,9 @@
 # NFCAttendance
 
+## 動作確認デバイス
+
+- PaSoRI RC-S380
+
 ## 使い方
 
 **最初に環境変数でSYSTEM_CODEとSERVICE_CODEを指定してください。**
