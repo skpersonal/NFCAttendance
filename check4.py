@@ -8,9 +8,9 @@ import sys
 import threading
 import tkinter as tk
 import traceback
-from logging import getLogger,DEBUG,INFO,StreamHandler
-from tkinter import *
-from tkinter import filedialog, scrolledtext, ttk
+from logging import DEBUG, INFO, StreamHandler, getLogger
+from tkinter import (Button, DISABLED, END, Entry, Frame, LEFT, Label, Listbox, N, NORMAL, Radiobutton, Scrollbar,
+                     StringVar, filedialog, scrolledtext, ttk)
 
 import dotenv
 import nfc
@@ -31,8 +31,14 @@ if args.debug:
 else:
     logger.setLevel(INFO)
 dotenv.load_dotenv()
-SYSTEM_CODE = int(os.getenv("SYSTEM_CODE", "0x0001"), 0) if args.system is None else int(args.system, 0)
-SERVICE_CODE = int(os.getenv("SERVICE_CODE", "0x0001"), 0) if args.service is None else int(args.service, 0)
+try:
+    SYSTEM_CODE = int(os.getenv("SYSTEM_CODE", "0x0001"), 0) if args.system is None \
+        else int(args.system, 0)
+    SERVICE_CODE = int(os.getenv("SERVICE_CODE", "0x0001"), 0) if args.service is None \
+        else int(args.service, 0)
+except ValueError:
+    logger.error("Invalid arguments")
+    exit(1)
 SE_SUCCESS_AUDIO = simpleaudio.WaveObject.from_wave_file("se_success.wav")
 SE_FAIL_AUDIO = simpleaudio.WaveObject.from_wave_file("se_fail.wav")
 JST = datetime.timezone(datetime.timedelta(hours=9))
@@ -81,8 +87,9 @@ class MainWindow(tk.Frame):
         self.roster_path.set(self.settings.get("roster", ""))
 
     def show_checker(self):
-        self.available_timestamps = [x for x in os.listdir(ATTENDANCE_FOLDER_PATH) if os.path.isfile(
-            os.path.join(ATTENDANCE_FOLDER_PATH, x)) and re.match("^[0-9]+-[0-9]+-[0-9]+\.csv$", x) is not None]
+        self.available_timestamps = [x for x in os.listdir(ATTENDANCE_FOLDER_PATH)
+                                     if os.path.isfile(os.path.join(ATTENDANCE_FOLDER_PATH, x))
+                                     and re.match("^[0-9]+-[0-9]+-[0-9]+\.csv$", x) is not None]
         self.available_timestamps.sort()
         checker_window = tk.Toplevel(self)
         # checker_window.grab_set()
@@ -158,7 +165,8 @@ class MainWindow(tk.Frame):
                     member_list.itemconfigure(i, background="pink")
                 if len(in_log) > 0:
                     # ここで遅刻判定用の時刻を設定する(デフォルトは9:25:00)
-                    if datetime.time(*tuple([int(x) for x in in_log[0][0].split(":")])) > datetime.time(9, 25, 0):
+                    if (datetime.time(*tuple([int(x) for x in in_log[0][0].split(":")]))
+                            > datetime.time(9, 25, 0)):
                         member_list.itemconfigure(i, background="yellow")
 
         def load_timestamp():
@@ -256,7 +264,8 @@ class MainWindow(tk.Frame):
                     output = (datetime.datetime.now(JST).strftime("%H:%M:%S"), s_num, "IN")
                 elif self.mode.get() == 1:
                     output = (datetime.datetime.now(JST).strftime("%H:%M:%S"), s_num, "OUT")
-                with open(os.path.join(ATTENDANCE_FOLDER_PATH, self.date + ".csv"), "a") as f:
+                with open(os.path.join(ATTENDANCE_FOLDER_PATH,
+                                       self.date + ".csv"), "a") as f:
                     writer = csv.writer(f)
                     writer.writerow([*output])
                 logger.debug(*output)
