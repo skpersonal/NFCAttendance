@@ -183,7 +183,7 @@ class MainWindow(tk.Frame):
         if len(self.available_timestamps) > 0:
             timestamp_selector.set(
                 self.available_timestamps[-1])
-            _load_timestamp()
+            _load_timestamp(None)
         timestamp_selector.bind("<<ComboboxSelected>>", _load_timestamp)
         timestamp_selector.grid(row=0, column=0)
 
