@@ -269,7 +269,7 @@ class MainWindow(tk.Frame):
                                        self.date + ".csv"), "a") as f:
                     writer = csv.writer(f)
                     writer.writerow([*output])
-                logger.debug(*output)
+                logger.debug(" ".join(output))
                 self.printVal(" ".join(output))
                 SE_SUCCESS_AUDIO.play()
             else:
