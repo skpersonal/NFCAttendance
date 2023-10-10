@@ -2,6 +2,7 @@
 */
 !.gitignore
 !check4.py
+!check4_headless.py
 !requirements.txt
 !se_fail.wav
 !se_success.wav
