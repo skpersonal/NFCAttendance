@@ -9,7 +9,7 @@ import threading
 import tkinter as tk
 import traceback
 from logging import DEBUG, INFO, StreamHandler, getLogger
-from tkinter import (Button, DISABLED, END, Entry, Frame, LEFT, Label, Listbox, N, NORMAL, Radiobutton, Scrollbar,
+from tkinter import (Button, DISABLED, END, Entry, Frame, LEFT, Label, Listbox, N, S, NORMAL, Radiobutton, Scrollbar,
                      StringVar, filedialog, scrolledtext, ttk)
 
 import dotenv
@@ -141,7 +141,7 @@ class MainWindow(tk.Frame):
 
         member_list.bind("<<ListboxSelect>>", _update_details)
         member_list.grid(row=0, column=0)
-        member_scroll.grid(row=0, column=1, sticky=N + ATTENDANCE_FOLDER_PATH)
+        member_scroll.grid(row=0, column=1, sticky=N + S)
 
         def _update_student_list_color():
             if len(self.roster_list) == 0:
@@ -214,7 +214,7 @@ class MainWindow(tk.Frame):
         update_button.pack()
         student_list_frame.pack(fill='y')
         update_button_frame.pack()
-        side_frame.grid(row=0, column=0, sticky=N + ATTENDANCE_FOLDER_PATH)
+        side_frame.grid(row=0, column=0, sticky=N + S)
         options_frame.pack()
         main_frame.pack()
         _update_student_list_color()
