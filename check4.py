@@ -9,7 +9,7 @@ import threading
 import tkinter as tk
 import traceback
 from logging import DEBUG, INFO, StreamHandler, getLogger
-from tkinter import (Button, DISABLED, END, Entry, Frame, LEFT, Label, Listbox, N, S, NORMAL, Radiobutton, Scrollbar,
+from tkinter import (Button, DISABLED, END, Entry, Frame, LEFT, Label, Listbox, N, NORMAL, Radiobutton, S, Scrollbar,
                      StringVar, filedialog, scrolledtext, ttk)
 
 import dotenv
