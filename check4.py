@@ -123,7 +123,7 @@ class MainWindow(tk.Frame):
         detail_box.pack()
         detail_frame.grid(row=0, column=1)
 
-        def _update_details():
+        def _update_details(e):
             detail_box.configure(state=NORMAL)
             detail_box.delete("1.0", END)
             selected_student_name = member_list.get(member_list.curselection())
@@ -169,7 +169,7 @@ class MainWindow(tk.Frame):
                             > datetime.time(9, 25, 0)):
                         member_list.itemconfigure(i, background="yellow")
 
-        def _load_timestamp():
+        def _load_timestamp(e):
             timestamp_selector.selection_clear()
             if os.path.isfile(os.path.join(ATTENDANCE_FOLDER_PATH, self.selected_timestamp.get())):
                 with open(os.path.join(ATTENDANCE_FOLDER_PATH, self.selected_timestamp.get()), "r") as g:
@@ -183,7 +183,7 @@ class MainWindow(tk.Frame):
         if len(self.available_timestamps) > 0:
             timestamp_selector.set(
                 self.available_timestamps[-1])
-            _load_timestamp()
+            _load_timestamp(None)
         timestamp_selector.bind("<<ComboboxSelected>>", _load_timestamp)
         timestamp_selector.grid(row=0, column=0)
 
