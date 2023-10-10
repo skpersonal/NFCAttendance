@@ -123,7 +123,7 @@ class MainWindow(tk.Frame):
         detail_box.pack()
         detail_frame.grid(row=0, column=1)
 
-        def update_details():
+        def _update_details():
             detail_box.configure(state=NORMAL)
             detail_box.delete("1.0", END)
             selected_student_name = member_list.get(member_list.curselection())
@@ -139,11 +139,11 @@ class MainWindow(tk.Frame):
             detail_box.insert(END, data)
             detail_box.configure(state=DISABLED)
 
-        member_list.bind("<<ListboxSelect>>", update_details)
+        member_list.bind("<<ListboxSelect>>", _update_details)
         member_list.grid(row=0, column=0)
         member_scroll.grid(row=0, column=1, sticky=N + ATTENDANCE_FOLDER_PATH)
 
-        def update_student_list_color():
+        def _update_student_list_color():
             if len(self.roster_list) == 0:
                 return
             if len(self.timestamp_list) == 0:
@@ -169,13 +169,13 @@ class MainWindow(tk.Frame):
                             > datetime.time(9, 25, 0)):
                         member_list.itemconfigure(i, background="yellow")
 
-        def load_timestamp():
+        def _load_timestamp():
             timestamp_selector.selection_clear()
             if os.path.isfile(os.path.join(ATTENDANCE_FOLDER_PATH, self.selected_timestamp.get())):
                 with open(os.path.join(ATTENDANCE_FOLDER_PATH, self.selected_timestamp.get()), "r") as g:
                     r = csv.reader(g)
                     self.timestamp_list = [x for x in r]
-            update_student_list_color()
+            _update_student_list_color()
 
         timestamp_selector = ttk.Combobox(
             options_frame, textvariable=self.selected_timestamp, values=self.available_timestamps,
@@ -183,11 +183,11 @@ class MainWindow(tk.Frame):
         if len(self.available_timestamps) > 0:
             timestamp_selector.set(
                 self.available_timestamps[-1])
-            load_timestamp()
-        timestamp_selector.bind("<<ComboboxSelected>>", load_timestamp)
+            _load_timestamp()
+        timestamp_selector.bind("<<ComboboxSelected>>", _load_timestamp)
         timestamp_selector.grid(row=0, column=0)
 
-        def set_roster_path():
+        def _set_roster_path():
             self.roster_path.set(filedialog.askopenfilename(
                 filetypes=[("csv", "*.csv")], initialdir=self.roster_path.get()))
             if os.path.isfile(self.roster_path.get()):
@@ -200,24 +200,24 @@ class MainWindow(tk.Frame):
                     self.roster_list = [x for x in r]
             # noinspection PyTypeChecker
             self.student_name_list.set([x[3] for x in self.roster_list])
-            update_student_list_color()
+            _update_student_list_color()
 
         roster_ref_text = Entry(
             options_frame, textvariable=self.roster_path, width=40)
         roster_ref_text.grid(row=0, column=1)
         roster_ref_button = Button(options_frame, text="参照",
-                                   command=set_roster_path)
+                                   command=_set_roster_path)
         roster_ref_button.grid(row=0, column=2)
 
         update_button = Button(update_button_frame, text="更新",
-                               command=update_student_list_color)
+                               command=_update_student_list_color)
         update_button.pack()
         student_list_frame.pack(fill='y')
         update_button_frame.pack()
         side_frame.grid(row=0, column=0, sticky=N + ATTENDANCE_FOLDER_PATH)
         options_frame.pack()
         main_frame.pack()
-        update_student_list_color()
+        _update_student_list_color()
 
     def stop_nfc(self):
         self.loop = False
@@ -248,13 +248,14 @@ class MainWindow(tk.Frame):
 
     def on_connect(self, tag):
         try:
-            idm, ppm = tag.polling()
-            if tag.sys != SYSTEM_CODE:
-                logger.debug("This card is not a student card (sys: " + hex(tag.sys) + ")")
-                return True
-            tag.idm, tag.ppm, tag.sys = idm, ppm, SYSTEM_CODE
+            if isinstance(tag, nfc.tag.tt3_sony.FelicaStandard):
+                idm, ppm = tag.polling()
+                if tag.sys != SYSTEM_CODE:
+                    logger.debug(
+                        f"This card is not a student card (sys:{hex(tag.sys)})")
+                    return True
+                tag.idm, tag.ppm, tag.sys = idm, ppm, SYSTEM_CODE
 
-            if isinstance(tag, nfc.tag.tt3.Type3Tag):
                 sc = nfc.tag.tt3.ServiceCode(SERVICE_CODE >> 6, SERVICE_CODE & 0x3f)
                 bc = nfc.tag.tt3.BlockCode(1, service=0)
                 card_data = tag.read_without_encryption([sc], [bc])
