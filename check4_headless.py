@@ -85,6 +85,7 @@ class Main:
                 sc = nfc.tag.tt3.ServiceCode(SERVICE_CODE >> 6, SERVICE_CODE & 0x3f)
                 bc = nfc.tag.tt3.BlockCode(1, service=0)
                 card_data = tag.read_without_encryption([sc], [bc])
+                # 学籍番号のデコード
                 s_num = bytearray.decode(card_data[0:8])
                 output = ""
                 if self.mode == 0:

@@ -219,6 +219,11 @@ class MainWindow(tk.Frame):
         main_frame.pack()
         _update_student_list_color()
 
+    def printVal(self, text):
+        self.timeline_lb.configure(state=NORMAL)
+        self.timeline_lb.insert(tk.END, text + "\n")
+        self.timeline_lb.configure(state=DISABLED)
+
     def stop_nfc(self):
         self.loop = False
 
@@ -241,11 +246,6 @@ class MainWindow(tk.Frame):
                 logger.error(traceback.format_exc())
             self.stop_nfc()
 
-    def printVal(self, text):
-        self.timeline_lb.configure(state=NORMAL)
-        self.timeline_lb.insert(tk.END, text + "\n")
-        self.timeline_lb.configure(state=DISABLED)
-
     def on_connect(self, tag):
         try:
             if isinstance(tag, nfc.tag.tt3_sony.FelicaStandard):
@@ -259,6 +259,7 @@ class MainWindow(tk.Frame):
                 sc = nfc.tag.tt3.ServiceCode(SERVICE_CODE >> 6, SERVICE_CODE & 0x3f)
                 bc = nfc.tag.tt3.BlockCode(1, service=0)
                 card_data = tag.read_without_encryption([sc], [bc])
+                # 学籍番号のデコード
                 s_num = bytearray.decode(card_data[0:8])
                 output = ""
                 if self.mode.get() == 0:
