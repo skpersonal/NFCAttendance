@@ -10,7 +10,7 @@ import tkinter as tk
 import traceback
 from logging import DEBUG, INFO, StreamHandler, getLogger
 from tkinter import (Button, DISABLED, END, Entry, Frame, LEFT, Label, Listbox, N, NORMAL, Radiobutton, S, Scrollbar,
-                     StringVar, filedialog, scrolledtext, ttk)
+                     StringVar, filedialog, scrolledtext, ttk, messagebox)
 
 import dotenv
 import nfc
@@ -209,8 +209,17 @@ class MainWindow(tk.Frame):
                                    command=_set_roster_path)
         roster_ref_button.grid(row=0, column=2)
 
-        update_button = Button(update_button_frame, text="更新",command=_load_timestamp)
-        update_button.pack()
+        def _show_stat():
+            r = [x[0] for x in self.roster_list]
+            messagebox.showinfo(title="統計",
+                                message=f"出席人数：{len(list(set([x[1] for x in self.timestamp_list if x[1] in r])))}"
+                                        f"/{len(self.roster_list)}")
+
+        update_button = Button(update_button_frame, text="更新",
+                               command=_load_timestamp)
+        update_button.grid(row=0, column=0)
+        stat_button = Button(update_button_frame, text="統計", command=_show_stat)
+        stat_button.grid(row=0, column=1)
         student_list_frame.pack(fill='y')
         update_button_frame.pack()
         side_frame.grid(row=0, column=0, sticky=N + S)
