@@ -209,8 +209,7 @@ class MainWindow(tk.Frame):
                                    command=_set_roster_path)
         roster_ref_button.grid(row=0, column=2)
 
-        update_button = Button(update_button_frame, text="更新",
-                               command=_update_student_list_color)
+        update_button = Button(update_button_frame, text="更新",command=_load_timestamp)
         update_button.pack()
         student_list_frame.pack(fill='y')
         update_button_frame.pack()
