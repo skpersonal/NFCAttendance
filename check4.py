@@ -9,12 +9,14 @@ import threading
 import tkinter as tk
 import traceback
 from logging import DEBUG, INFO, StreamHandler, getLogger
-from tkinter import (Button, DISABLED, END, Entry, Frame, LEFT, Label, Listbox, N, NORMAL, Radiobutton, S, Scrollbar,
+from tkinter import (Button, DISABLED, END, Entry, Frame, LEFT, Label, Listbox, N, E, NORMAL,BOTH,Y,X, Radiobutton, S, Scrollbar,
                      StringVar, filedialog, scrolledtext, ttk, messagebox)
 
 import dotenv
 import nfc
 import simpleaudio
+
+# TODO: 履修者名簿との突き合わせ＆日にちごとの統計をファイル出力
 
 ATTENDANCE_FOLDER_PATH = "attendance"
 SETTINGS_FILE_PATH = "settings.json"
@@ -44,7 +46,7 @@ SE_FAIL_AUDIO = simpleaudio.WaveObject.from_wave_file("se_fail.wav")
 JST = datetime.timezone(datetime.timedelta(hours=9))
 
 
-class MainWindow(tk.Frame):
+class Application(tk.Frame):
     def __init__(self, master: tk.Tk):
         super().__init__(master)
         self.pack()
@@ -77,7 +79,7 @@ class MainWindow(tk.Frame):
         rb_in.pack()
         rb_out.pack()
         self.timeline_lb = scrolledtext.ScrolledText(master, state=DISABLED)
-        self.timeline_lb.pack()
+        self.timeline_lb.pack(expand=True,fill=BOTH)
         self.start_nfc()
 
     def load_config(self):
@@ -87,6 +89,8 @@ class MainWindow(tk.Frame):
         self.roster_path.set(self.settings.get("roster", ""))
 
     def show_checker(self):
+        # TODO: 画面の拡大に対応する(作業中)
+        # TODO: 手動で出席をつける
         self.available_timestamps = [x for x in os.listdir(ATTENDANCE_FOLDER_PATH)
                                      if os.path.isfile(os.path.join(ATTENDANCE_FOLDER_PATH, x))
                                      and re.match("^[0-9]+-[0-9]+-[0-9]+\.csv$", x) is not None]
@@ -120,8 +124,8 @@ class MainWindow(tk.Frame):
         detail_frame = Frame(main_frame)
         detail_box = scrolledtext.ScrolledText(detail_frame, width=50)
         detail_box.configure(state=DISABLED)
-        detail_box.pack()
-        detail_frame.grid(row=0, column=1)
+        detail_box.pack(expand=True, fill=BOTH)
+        detail_frame.grid(row=0, column=1, sticky=N + S + E)
 
         def _update_details(e=None):
             detail_box.configure(state=NORMAL)
@@ -220,11 +224,11 @@ class MainWindow(tk.Frame):
         update_button.grid(row=0, column=0)
         stat_button = Button(update_button_frame, text="統計", command=_show_stat)
         stat_button.grid(row=0, column=1)
-        student_list_frame.pack(fill='y')
+        student_list_frame.pack(fill=Y, expand=True)
         update_button_frame.pack()
         side_frame.grid(row=0, column=0, sticky=N + S)
-        options_frame.pack()
-        main_frame.pack()
+        options_frame.pack(expand=True,fill=X)
+        main_frame.pack(expand=True,fill=BOTH)
         _update_student_list_color()
 
     def printVal(self, text):
@@ -304,7 +308,7 @@ def main():
     logger.debug(f"SYSTEM_CODE={hex(SYSTEM_CODE)}")
     logger.debug(f"SERVICE_CODE={hex(SERVICE_CODE)}")
     window = tk.Tk()
-    main_window = MainWindow(window)
+    main_window = Application(window)
     main_window.mainloop()
 
 
