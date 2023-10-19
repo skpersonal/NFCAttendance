@@ -4,6 +4,7 @@ import datetime
 import os
 import re
 import sys
+import traceback
 from logging import DEBUG, INFO, StreamHandler, getLogger
 
 PRESENT = "2"
@@ -16,7 +17,14 @@ logger.setLevel(INFO)
 
 
 def _to_time(time: str):
-    return datetime.time(*tuple([int(x) for x in time.split(":")]))
+    splitter = time.count(":")
+    logger.debug(splitter)
+    if splitter == 2:
+        return datetime.datetime.strptime(time, "%H:%M:%S")
+    elif splitter == 1:
+        return datetime.datetime.strptime(time, "%H:%M")
+    else:
+        raise ValueError(f"Invalid argument _to_time({time})")
 
 
 def main():
@@ -47,7 +55,16 @@ def main():
         logger.setLevel(DEBUG)
     roster_file = args.roster_csv
     timestamp_dir = args.timestamp_dir
-    limit_time = _to_time(args.time) if args.time is not None else _to_time("9:25:00")
+    try:
+        limit_time = (
+            _to_time(args.time) if args.time is not None else _to_time("9:25:00")
+        )
+    except ValueError as e:
+        if args.debug:
+            logger.error(traceback.format_exc())
+        else:
+            logger.error(traceback.format_exception_only(type(e), e)[0].strip())
+        return
     if not os.path.isfile(roster_file):
         logger.error("roster file does not exist")
         return
@@ -100,7 +117,16 @@ def main():
             fastest_time: datetime.time = None
             for timestamp in timestamps:
                 if timestamp[1] == result_data["学籍番号"]:
-                    ts = _to_time(timestamp[0])
+                    try:
+                        ts = _to_time(timestamp[0])
+                    except ValueError as e:
+                        if args.debug:
+                            logger.error(traceback.format_exc())
+                        else:
+                            logger.error(
+                                traceback.format_exception_only(type(e), e)[0].strip()
+                            )
+                        return
                     if fastest_time is None or ts < fastest_time:
                         fastest_time = ts
                     if ts <= limit_time:
@@ -109,10 +135,10 @@ def main():
                         late = True
             if present:
                 result_data[td] = f"{PRESENT}"
-                result_data[td + "(time)"] = f"{fastest_time}"
+                result_data[td + "(time)"] = fastest_time.strftime("%H:%M:%S")
             elif late:
                 result_data[td] = f"{LATE}"
-                result_data[td + "(time)"] = f"{fastest_time}"
+                result_data[td + "(time)"] = fastest_time.strftime("%H:%M:%S")
             else:
                 result_data[td] = ABSENT
         result_data_all.append(result_data)
