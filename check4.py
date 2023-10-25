@@ -56,6 +56,7 @@ class MainWindow(tk.Frame):
         self.timestamp_list = []
         self.roster_path = StringVar(master, "")
         self.student_name_list = StringVar(master)
+        self.st_num = 0
         self.date = datetime.datetime.now(JST).strftime("%Y-%m-%d")
         os.chdir(os.path.dirname(__file__))
         if not os.path.isdir(ATTENDANCE_FOLDER_PATH):
@@ -128,13 +129,12 @@ class MainWindow(tk.Frame):
             detail_box.delete("1.0", END)
             selected_student_name = member_list.get(member_list.curselection())
             member_list.selection_clear(0, END)
-            st_num = None
             for x in self.roster_list:
                 if x[3] == selected_student_name:
-                    st_num = x[0]
+                    self.st_num = x[0]
                     break
             st_log = [x for x in self.timestamp_list if str(
-                x[1]) == str(st_num)]
+                x[1]) == str(self.st_num)]
             data = "\n".join([" ".join(x) for x in st_log])
             detail_box.insert(END, data)
             detail_box.configure(state=DISABLED)
@@ -220,6 +220,15 @@ class MainWindow(tk.Frame):
         update_button.grid(row=0, column=0)
         stat_button = Button(update_button_frame, text="統計", command=_show_stat)
         stat_button.grid(row=0, column=1)
+
+        def _manual_add_record():
+            if self.st_num!=0:
+                self.write_timestamp(self.st_num, manual=True)
+                _load_timestamp()
+
+        manual_add_record_button = Button(update_button_frame, text="手動追加",
+                                          command=_manual_add_record)
+        manual_add_record_button.grid(row=0, column=2)
         student_list_frame.pack(fill='y')
         update_button_frame.pack()
         side_frame.grid(row=0, column=0, sticky=N + S)
@@ -231,6 +240,19 @@ class MainWindow(tk.Frame):
         self.timeline_lb.configure(state=NORMAL)
         self.timeline_lb.insert(tk.END, text + "\n")
         self.timeline_lb.configure(state=DISABLED)
+
+    def write_timestamp(self, s_num, manual=False):
+        output = ""
+        if self.mode.get() == 0:
+            output = (datetime.datetime.now(JST).strftime("%H:%M:%S"), s_num, "IN", "手動" if manual else "")
+        elif self.mode.get() == 1:
+            output = (datetime.datetime.now(JST).strftime("%H:%M:%S"), s_num, "OUT", "手動" if manual else "")
+        with open(os.path.join(ATTENDANCE_FOLDER_PATH,
+                               self.date + ".csv"), "a") as f:
+            writer = csv.writer(f)
+            writer.writerow([*output])
+        logger.debug(" ".join(output))
+        self.printVal(" ".join(output))
 
     def stop_nfc(self):
         self.loop = False
@@ -269,17 +291,7 @@ class MainWindow(tk.Frame):
                 card_data = tag.read_without_encryption([sc], [bc])
                 # 学籍番号のデコード
                 s_num = bytearray.decode(card_data[0:8])
-                output = ""
-                if self.mode.get() == 0:
-                    output = (datetime.datetime.now(JST).strftime("%H:%M:%S"), s_num, "IN")
-                elif self.mode.get() == 1:
-                    output = (datetime.datetime.now(JST).strftime("%H:%M:%S"), s_num, "OUT")
-                with open(os.path.join(ATTENDANCE_FOLDER_PATH,
-                                       self.date + ".csv"), "a") as f:
-                    writer = csv.writer(f)
-                    writer.writerow([*output])
-                logger.debug(" ".join(output))
-                self.printVal(" ".join(output))
+                self.write_timestamp(s_num)
                 SE_SUCCESS_AUDIO.play()
             else:
                 logger.debug('error: invalid card')
