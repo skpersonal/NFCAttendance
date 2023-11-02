@@ -142,7 +142,7 @@ def main():
             else:
                 result_data[td] = ABSENT
         result_data_all.append(result_data)
-    with open("attendance.csv", "w") as f:
+    with open(("attendance" if args.all else args.date) + ".csv", "w") as f:
         writer = csv.DictWriter(f, fieldnames=result_header)
         writer.writeheader()
         writer.writerows(result_data_all)
