@@ -9,15 +9,34 @@ import threading
 import tkinter as tk
 import traceback
 from logging import DEBUG, INFO, StreamHandler, getLogger
-from tkinter import (Button, DISABLED, END, Entry, Frame, LEFT, Label, Listbox, N, NORMAL, Radiobutton, S, Scrollbar,
-                     StringVar, filedialog, scrolledtext, ttk, messagebox)
+from tkinter import (
+    Button,
+    DISABLED,
+    END,
+    Entry,
+    Frame,
+    LEFT,
+    Label,
+    Listbox,
+    N,
+    NORMAL,
+    Radiobutton,
+    S,
+    Scrollbar,
+    StringVar,
+    filedialog,
+    scrolledtext,
+    ttk,
+    messagebox,
+)
 
 import dotenv
 import nfc
 import simpleaudio
 
-ATTENDANCE_FOLDER_PATH = "attendance"
-SETTINGS_FILE_PATH = "settings.json"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ATTENDANCE_FOLDER_PATH = os.path.join(BASE_DIR, "attendance")
+SETTINGS_FILE_PATH = os.path.join(BASE_DIR, "settings.json")
 
 logger = getLogger(__name__)
 logger.addHandler(StreamHandler(sys.stdout))
@@ -32,15 +51,25 @@ else:
     logger.setLevel(INFO)
 dotenv.load_dotenv()
 try:
-    SYSTEM_CODE = int(os.getenv("SYSTEM_CODE", "0x0001"), 0) if args.system is None \
+    SYSTEM_CODE = (
+        int(os.getenv("SYSTEM_CODE", "0x0001"), 0)
+        if args.system is None
         else int(args.system, 0)
-    SERVICE_CODE = int(os.getenv("SERVICE_CODE", "0x0001"), 0) if args.service is None \
+    )
+    SERVICE_CODE = (
+        int(os.getenv("SERVICE_CODE", "0x0001"), 0)
+        if args.service is None
         else int(args.service, 0)
+    )
 except ValueError:
     logger.error("Invalid arguments")
     exit(1)
-SE_SUCCESS_AUDIO = simpleaudio.WaveObject.from_wave_file("se_success.wav")
-SE_FAIL_AUDIO = simpleaudio.WaveObject.from_wave_file("se_fail.wav")
+SE_SUCCESS_AUDIO = simpleaudio.WaveObject.from_wave_file(
+    os.path.join(BASE_DIR, "se_success.wav")
+)
+SE_FAIL_AUDIO = simpleaudio.WaveObject.from_wave_file(
+    os.path.join(BASE_DIR, "se_fail.wav")
+)
 JST = datetime.timezone(datetime.timedelta(hours=9))
 
 
@@ -66,8 +95,9 @@ class MainWindow(tk.Frame):
         title_label = Label(master, text="打刻ツール", font=("", 40))
         title_label.pack()
         button_frame = Frame(master)
-        chk_in_button = Button(button_frame, text="出席チェック",
-                               font=("", 20), command=self.show_checker)
+        chk_in_button = Button(
+            button_frame, text="出席チェック", font=("", 20), command=self.show_checker
+        )
         chk_in_button.pack(side=LEFT)
         button_frame.pack()
         mode_label = Label(master, text="モードを選択してください", font=("", 15))
@@ -88,9 +118,12 @@ class MainWindow(tk.Frame):
         self.roster_path.set(self.settings.get("roster", ""))
 
     def show_checker(self):
-        self.available_timestamps = [x for x in os.listdir(ATTENDANCE_FOLDER_PATH)
-                                     if os.path.isfile(os.path.join(ATTENDANCE_FOLDER_PATH, x))
-                                     and re.match("^[0-9]+-[0-9]+-[0-9]+\.csv$", x) is not None]
+        self.available_timestamps = [
+            x
+            for x in os.listdir(ATTENDANCE_FOLDER_PATH)
+            if os.path.isfile(os.path.join(ATTENDANCE_FOLDER_PATH, x))
+            and re.match("^[0-9]+-[0-9]+-[0-9]+\.csv$", x) is not None
+        ]
         self.available_timestamps.sort()
         checker_window = tk.Toplevel(self)
         # checker_window.grab_set()
@@ -114,8 +147,14 @@ class MainWindow(tk.Frame):
         # noinspection PyTypeChecker
         self.student_name_list.set(value=[x[3] for x in self.roster_list])
 
-        member_list = Listbox(student_list_frame, listvariable=self.student_name_list, selectmode="single",
-                              yscrollcommand=member_scroll.set, height=15, width=20)
+        member_list = Listbox(
+            student_list_frame,
+            listvariable=self.student_name_list,
+            selectmode="single",
+            yscrollcommand=member_scroll.set,
+            height=15,
+            width=20,
+        )
         member_scroll["command"] = member_list.yview
 
         detail_frame = Frame(main_frame)
@@ -133,8 +172,7 @@ class MainWindow(tk.Frame):
                 if x[3] == selected_student_name:
                     self.st_num = x[0]
                     break
-            st_log = [x for x in self.timestamp_list if str(
-                x[1]) == str(self.st_num)]
+            st_log = [x for x in self.timestamp_list if str(x[1]) == str(self.st_num)]
             data = "\n".join([" ".join(x) for x in st_log])
             detail_box.insert(END, data)
             detail_box.configure(state=DISABLED)
@@ -156,8 +194,7 @@ class MainWindow(tk.Frame):
                         break
                 if st_num is None:
                     continue
-                st_log = [x for x in self.timestamp_list if str(
-                    x[1]) == str(st_num)]
+                st_log = [x for x in self.timestamp_list if str(x[1]) == str(st_num)]
                 in_log = [x for x in st_log if str(x[2]) == "IN"]
                 # out_log = [x for x in st_log if str(x[2]) == "OUT"]
                 member_list.itemconfigure(i, background="")
@@ -165,31 +202,44 @@ class MainWindow(tk.Frame):
                     member_list.itemconfigure(i, background="pink")
                 if len(in_log) > 0:
                     # ここで遅刻判定用の時刻を設定する(デフォルトは9:25:00)
-                    if (datetime.time(*tuple([int(x) for x in in_log[0][0].split(":")]))
-                            > datetime.time(9, 25, 0)):
+                    if datetime.time(
+                        *tuple([int(x) for x in in_log[0][0].split(":")])
+                    ) > datetime.time(9, 25, 0):
                         member_list.itemconfigure(i, background="yellow")
 
         def _load_timestamp(e=None):
             timestamp_selector.selection_clear()
-            if os.path.isfile(os.path.join(ATTENDANCE_FOLDER_PATH, self.selected_timestamp.get())):
-                with open(os.path.join(ATTENDANCE_FOLDER_PATH, self.selected_timestamp.get()), "r") as g:
+            if os.path.isfile(
+                os.path.join(ATTENDANCE_FOLDER_PATH, self.selected_timestamp.get())
+            ):
+                with open(
+                    os.path.join(ATTENDANCE_FOLDER_PATH, self.selected_timestamp.get()),
+                    "r",
+                ) as g:
                     r = csv.reader(g)
                     self.timestamp_list = [x for x in r]
             _update_student_list_color()
 
         timestamp_selector = ttk.Combobox(
-            options_frame, textvariable=self.selected_timestamp, values=self.available_timestamps,
-            exportselection=False, width=12, state='readonly')
+            options_frame,
+            textvariable=self.selected_timestamp,
+            values=self.available_timestamps,
+            exportselection=False,
+            width=12,
+            state="readonly",
+        )
         if len(self.available_timestamps) > 0:
-            timestamp_selector.set(
-                self.available_timestamps[-1])
+            timestamp_selector.set(self.available_timestamps[-1])
             _load_timestamp(None)
         timestamp_selector.bind("<<ComboboxSelected>>", _load_timestamp)
         timestamp_selector.grid(row=0, column=0)
 
         def _set_roster_path():
-            self.roster_path.set(filedialog.askopenfilename(
-                filetypes=[("csv", "*.csv")], initialdir=self.roster_path.get()))
+            self.roster_path.set(
+                filedialog.askopenfilename(
+                    filetypes=[("csv", "*.csv")], initialdir=self.roster_path.get()
+                )
+            )
             if os.path.isfile(self.roster_path.get()):
                 self.settings["roster"] = self.roster_path.get()
                 with open("settings.json", "w") as g:
@@ -202,34 +252,36 @@ class MainWindow(tk.Frame):
             self.student_name_list.set([x[3] for x in self.roster_list])
             _update_student_list_color()
 
-        roster_ref_text = Entry(
-            options_frame, textvariable=self.roster_path, width=40)
+        roster_ref_text = Entry(options_frame, textvariable=self.roster_path, width=40)
         roster_ref_text.grid(row=0, column=1)
-        roster_ref_button = Button(options_frame, text="参照",
-                                   command=_set_roster_path)
+        roster_ref_button = Button(options_frame, text="参照", command=_set_roster_path)
         roster_ref_button.grid(row=0, column=2)
 
         def _show_stat():
             r = [x[0] for x in self.roster_list]
-            messagebox.showinfo(title="統計",
-                                message=f"出席人数：{len(list(set([x[1] for x in self.timestamp_list if x[1] in r])))}"
-                                        f"/{len(self.roster_list)}")
+            messagebox.showinfo(
+                title="統計",
+                message=f"出席人数：{len(list(set([x[1] for x in self.timestamp_list if x[1] in r])))}"
+                f"/{len(self.roster_list)}",
+            )
 
-        update_button = Button(update_button_frame, text="更新",
-                               command=_load_timestamp)
+        update_button = Button(
+            update_button_frame, text="更新", command=_load_timestamp
+        )
         update_button.grid(row=0, column=0)
         stat_button = Button(update_button_frame, text="統計", command=_show_stat)
         stat_button.grid(row=0, column=1)
 
         def _manual_add_record():
-            if self.st_num!=0:
+            if self.st_num != 0:
                 self.write_timestamp(self.st_num, manual=True)
                 _load_timestamp()
 
-        manual_add_record_button = Button(update_button_frame, text="手動追加",
-                                          command=_manual_add_record)
+        manual_add_record_button = Button(
+            update_button_frame, text="手動追加", command=_manual_add_record
+        )
         manual_add_record_button.grid(row=0, column=2)
-        student_list_frame.pack(fill='y')
+        student_list_frame.pack(fill="y")
         update_button_frame.pack()
         side_frame.grid(row=0, column=0, sticky=N + S)
         options_frame.pack()
@@ -244,11 +296,20 @@ class MainWindow(tk.Frame):
     def write_timestamp(self, s_num, manual=False):
         output = ""
         if self.mode.get() == 0:
-            output = (datetime.datetime.now(JST).strftime("%H:%M:%S"), s_num, "IN", "手動" if manual else "")
+            output = (
+                datetime.datetime.now(JST).strftime("%H:%M:%S"),
+                s_num,
+                "IN",
+                "手動" if manual else "",
+            )
         elif self.mode.get() == 1:
-            output = (datetime.datetime.now(JST).strftime("%H:%M:%S"), s_num, "OUT", "手動" if manual else "")
-        with open(os.path.join(ATTENDANCE_FOLDER_PATH,
-                               self.date + ".csv"), "a") as f:
+            output = (
+                datetime.datetime.now(JST).strftime("%H:%M:%S"),
+                s_num,
+                "OUT",
+                "手動" if manual else "",
+            )
+        with open(os.path.join(ATTENDANCE_FOLDER_PATH, self.date + ".csv"), "a") as f:
             writer = csv.writer(f)
             writer.writerow([*output])
         logger.debug(" ".join(output))
@@ -262,8 +323,7 @@ class MainWindow(tk.Frame):
         try:
             clf = nfc.ContactlessFrontend("usb")
             self.loop = True
-            t = threading.Thread(target=self.get_connect,
-                                 args=(clf,), daemon=True)
+            t = threading.Thread(target=self.get_connect, args=(clf,), daemon=True)
             t.start()
             logger.debug("NFC thread started")
             logger.debug("NFC ready")
@@ -271,7 +331,9 @@ class MainWindow(tk.Frame):
         except OSError as e:
             if e.errno == 19:
                 logger.debug("NFCカードリーダーが検出できません")
-                self.printVal("NFCカードリーダーが検出できません\nカードリーダーを接続してから開き直してください")
+                self.printVal(
+                    "NFCカードリーダーが検出できません\nカードリーダーを接続してから開き直してください"
+                )
             else:
                 logger.error(traceback.format_exc())
             self.stop_nfc()
@@ -282,11 +344,12 @@ class MainWindow(tk.Frame):
                 idm, ppm = tag.polling()
                 if tag.sys != SYSTEM_CODE:
                     logger.debug(
-                        f"This card is not a student card (sys:{hex(tag.sys)})")
+                        f"This card is not a student card (sys:{hex(tag.sys)})"
+                    )
                     return True
                 tag.idm, tag.ppm, tag.sys = idm, ppm, SYSTEM_CODE
 
-                sc = nfc.tag.tt3.ServiceCode(SERVICE_CODE >> 6, SERVICE_CODE & 0x3f)
+                sc = nfc.tag.tt3.ServiceCode(SERVICE_CODE >> 6, SERVICE_CODE & 0x3F)
                 bc = nfc.tag.tt3.BlockCode(1, service=0)
                 card_data = tag.read_without_encryption([sc], [bc])
                 # 学籍番号のデコード
@@ -294,7 +357,7 @@ class MainWindow(tk.Frame):
                 self.write_timestamp(s_num)
                 SE_SUCCESS_AUDIO.play()
             else:
-                logger.debug('error: invalid card')
+                logger.debug("error: invalid card")
         except nfc.tag.TagCommandError:
             logger.error(traceback.format_exc())
         return True
@@ -304,8 +367,8 @@ class MainWindow(tk.Frame):
         try:
             while self.loop:
                 clf.connect(
-                    rdwr={'on-connect': self.on_connect},
-                    terminate=lambda: not self.loop
+                    rdwr={"on-connect": self.on_connect},
+                    terminate=lambda: not self.loop,
                 )
         finally:
             clf.close()
